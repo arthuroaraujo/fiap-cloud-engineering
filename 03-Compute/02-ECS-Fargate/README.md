@@ -58,7 +58,7 @@ O ECS tem dois modos de execução: **EC2**, em que você é dono das máquinas 
 
 ## Contexto
 
-A aula de arquitetura compute e storage cobriu três modelos de execução: VM crua (EC2), container orquestrado (ECS/EKS) e função (Lambda). Este lab aprofunda o segundo modelo com o sabor que mais aparece em vagas de engenharia hoje: ECS com Fargate. Ao contrário do Lab 03.1 (x86 vs Graviton), aqui você não vai comparar arquiteturas — o foco é entender como as peças do ECS se encaixam e como o ECR fecha o loop do deploy.
+A aula cobriu três modelos de execução na AWS: VM crua (EC2), container orquestrado (ECS/EKS) e função (Lambda). Este lab aprofunda o segundo modelo com o sabor que mais aparece em vagas de engenharia hoje: ECS com Fargate. Ao contrário do Lab 03.1 (x86 vs Graviton), aqui você não vai comparar arquiteturas — o foco é entender como as peças do ECS se encaixam e como o ECR fecha o loop do deploy.
 
 O serviço ECS é um *controller*: ele fica observando o estado desejado (`desired_count=1`) e, quando a imagem no ECR aparece pela primeira vez, sobe a task. Se a task cai, ele sobe outra. Esse comportamento de *self-healing* é o que faz com que o Terraform aplique a infra antes da imagem existir: o service simplesmente vai ficar em erro cíclico até o `docker push` completar.
 

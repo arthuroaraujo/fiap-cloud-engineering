@@ -1,4 +1,4 @@
-# FIAP — Arquitetura de Compute e Storage na AWS
+# FIAP — Cloud Engineering
 
 Repositório de laboratórios práticos da disciplina. Cada lab é um passo a passo autossuficiente que você executa dentro do **GitHub Codespaces** contra uma conta **AWS Academy**, provisionando infraestrutura real com **Terraform** e destruindo tudo ao final para não acumular custo.
 

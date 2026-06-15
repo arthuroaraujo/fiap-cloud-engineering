@@ -1,6 +1,6 @@
 # .devcontainer — Configuração do ambiente dos laboratórios
 
-Esta pasta contém a definição do ambiente de desenvolvimento usado em todos os laboratórios da disciplina **Arquitetura de Compute e Storage na AWS**. A ideia é simples: qualquer aluno, em qualquer máquina, consegue abrir um ambiente idêntico ao do professor em segundos — sem instalar nada localmente.
+Esta pasta contém a definição do ambiente de desenvolvimento usado em todos os laboratórios da disciplina **Cloud Engineering**. A ideia é simples: qualquer aluno, em qualquer máquina, consegue abrir um ambiente idêntico ao do professor em segundos — sem instalar nada localmente.
 
 > [!TIP]
 > Se você é aluno e só quer começar os laboratórios, vá direto para o [setup da aula 01](../01-create-codespaces/README.md). Este README é para quem quer entender **como** o ambiente é construído.
