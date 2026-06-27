@@ -8,6 +8,11 @@ output "queue_url" {
   value       = aws_sqs_queue.pedidos.url
 }
 
+output "bucket_datalake" {
+  description = "Bucket S3 onde os pedidos sao gravados."
+  value       = aws_s3_bucket.datalake.bucket
+}
+
 output "dashboard_url" {
   description = "Link direto do dashboard de observabilidade da Fase 2."
   value       = "https://us-east-1.console.aws.amazon.com/cloudwatch/home?region=us-east-1#dashboards/dashboard/${aws_cloudwatch_dashboard.fase2.dashboard_name}"

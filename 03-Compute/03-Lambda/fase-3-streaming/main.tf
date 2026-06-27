@@ -176,7 +176,7 @@ resource "aws_cloudwatch_dashboard" "fase3" {
   dashboard_body = jsonencode({
     widgets = [
       {
-        type = "text", x = 0, y = 0, width = 24, height = 2,
+        type       = "text", x = 0, y = 0, width = 24, height = 2,
         properties = { markdown = "# PedeJa - Fase 3 (Kinesis: 1 stream -> N consumidores)\nO **mesmo** stream alimenta o **data lake** e o **faturamento em tempo real**, de forma independente. O dado fica retido -> permite **replay**. Isso a fila SQS nao faz." }
       },
       {

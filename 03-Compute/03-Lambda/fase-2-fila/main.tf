@@ -146,7 +146,7 @@ resource "aws_cloudwatch_dashboard" "fase2" {
   dashboard_body = jsonencode({
     widgets = [
       {
-        type = "text", x = 0, y = 0, width = 24, height = 2,
+        type       = "text", x = 0, y = 0, width = 24, height = 2,
         properties = { markdown = "# PedeJa - Fase 2 (API GW -> Produtor -> SQS -> Consumidor -> S3)\nA **fila desacopla**: o produtor responde rapido e a fila absorve o pico. Observe a **profundidade da fila** subir e baixar, e a **DLQ** capturar o que falha." }
       },
       {

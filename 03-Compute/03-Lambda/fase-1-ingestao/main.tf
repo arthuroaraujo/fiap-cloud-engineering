@@ -43,10 +43,10 @@ resource "aws_lambda_function" "ingestao" {
 
   environment {
     variables = {
-      BUCKET_DATA_LAKE          = aws_s3_bucket.datalake.bucket
-      POWERTOOLS_SERVICE_NAME   = "pedeja-ingestao"
+      BUCKET_DATA_LAKE             = aws_s3_bucket.datalake.bucket
+      POWERTOOLS_SERVICE_NAME      = "pedeja-ingestao"
       POWERTOOLS_METRICS_NAMESPACE = "PedeJa"
-      POWERTOOLS_LOG_LEVEL      = "INFO"
+      POWERTOOLS_LOG_LEVEL         = "INFO"
     }
   }
 }
@@ -97,14 +97,14 @@ resource "aws_cloudwatch_dashboard" "fase1" {
   dashboard_body = jsonencode({
     widgets = [
       {
-        type = "text", x = 0, y = 0, width = 24, height = 2,
+        type       = "text", x = 0, y = 0, width = 24, height = 2,
         properties = { markdown = "# PedeJa - Fase 1 (Ingestao API GW -> Lambda -> S3)\nOs **4 golden signals** da Lambda + metricas de **negocio**. Se a latencia sobe e os erros aparecem sob carga, e hora de evoluir a arquitetura." }
       },
       {
         type = "metric", x = 0, y = 2, width = 6, height = 6,
         properties = {
-          title  = "Trafego - Invocacoes",
-          region = "us-east-1",
+          title   = "Trafego - Invocacoes",
+          region  = "us-east-1",
           metrics = [["AWS/Lambda", "Invocations", "FunctionName", aws_lambda_function.ingestao.function_name, { stat = "Sum" }]]
         }
       },
@@ -114,22 +114,22 @@ resource "aws_cloudwatch_dashboard" "fase1" {
           title  = "Latencia - Duration (ms)",
           region = "us-east-1",
           metrics = [["AWS/Lambda", "Duration", "FunctionName", aws_lambda_function.ingestao.function_name, { stat = "Average" }],
-            ["...", { stat = "p99" }]]
+          ["...", { stat = "p99" }]]
         }
       },
       {
         type = "metric", x = 12, y = 2, width = 6, height = 6,
         properties = {
-          title  = "Erros",
-          region = "us-east-1",
+          title   = "Erros",
+          region  = "us-east-1",
           metrics = [["AWS/Lambda", "Errors", "FunctionName", aws_lambda_function.ingestao.function_name, { stat = "Sum" }]]
         }
       },
       {
         type = "metric", x = 18, y = 2, width = 6, height = 6,
         properties = {
-          title  = "Saturacao - ConcurrentExecutions",
-          region = "us-east-1",
+          title   = "Saturacao - ConcurrentExecutions",
+          region  = "us-east-1",
           metrics = [["AWS/Lambda", "ConcurrentExecutions", "FunctionName", aws_lambda_function.ingestao.function_name, { stat = "Maximum" }]]
         }
       },

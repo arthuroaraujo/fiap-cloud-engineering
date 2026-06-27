@@ -85,7 +85,7 @@ Você entende a história, o conjunto de dados fixo de pedidos, e a pergunta que
 **1.** Conheça o conjunto de dados. Todo aluno usa **exatamente os mesmos 10 pedidos** — assim os resultados são idênticos para todos e você pode comparar com um colega. Abra e leia o arquivo:
 
 ```bash
-cat /workspaces/fiap-cloud-engineering/03-Compute/03-Lambda/dados/pedidos.json
+cat /workspaces/fiap-cloud-engineering/03-Compute/03-Lambda/dados/pedidos.json | jq
 ```
 
 São 10 pedidos, todos do dia `2026-03-15`, distribuídos em 4 cidades. Como o dado é fixo, o **faturamento por cidade é determinístico** — você vai usar isso para validar cada fase:
@@ -105,7 +105,7 @@ São 10 pedidos, todos do dia `2026-03-15`, distribuídos em 4 cidades. Como o d
 
 ### Checkpoint
 
-- [x] Você leu os 10 pedidos e entendeu que o dataset é fixo.
+- [x] Você lee u os 10 pedidos entendeu que o dataset é fixo.
 - [x] Você sabe o faturamento esperado por cidade (vai usar para validar).
 
 ---
@@ -154,17 +154,23 @@ A integração do API Gateway com a Lambda é do tipo `AWS_PROXY`: o API Gateway
 terraform apply -auto-approve
 ```
 
-Ao final, o Terraform imprime 3 saídas. **Guarde a `api_url`** — você vai usá-la no próximo passo:
-
-```
-api_url         = "https://xxxxxxxx.execute-api.us-east-1.amazonaws.com"
-bucket_datalake = "pedeja-datalake-<sua-conta>"
-dashboard_url   = "https://us-east-1.console.aws.amazon.com/cloudwatch/home?region=us-east-1#dashboards/dashboard/PedeJa-Fase1-Ingestao"
-```
+Ao final, o Terraform imprime 3 saídas (`api_url`, `bucket_datalake`, `dashboard_url`).
 
 <!-- PRINT SUGERIDO: img/f1-apply.png
      Saida do terraform apply da Fase 1 mostrando "Apply complete! Resources: 8 added" e os 3 outputs. -->
 ![](img/f1-apply.png)
+
+Em vez de copiar e colar essas saídas, capture-as direto do Terraform em variáveis de ambiente — os próximos passos usam essas variáveis, então **rode na mesma pasta `fase-1-ingestao`**:
+
+```bash
+export API=$(terraform output -raw api_url)
+export BUCKET=$(terraform output -raw bucket_datalake)
+echo "API....: $API"
+echo "BUCKET.: $BUCKET"
+```
+
+> [!TIP]
+> Essas variáveis valem enquanto o terminal estiver aberto. Se você fechar o terminal ou abrir outro, rode este passo de novo (de dentro da pasta da fase) para recriá-las.
 
 <details>
 <summary><b>⚠ Se der erro: <code>InvalidAccessKeyId</code> ou <code>ExpiredToken</code></b></summary>
@@ -174,11 +180,10 @@ As credenciais da AWS Academy expiraram (duram 4 horas). Volte ao [Preparando Cr
 </details>
 
 <a id="passo-4"></a>
-**4.** Dispare os 10 pedidos contra a API. Este comando lê o dataset fixo e faz um `POST` por pedido (troque a URL pela sua `api_url`):
+**4.** Dispare os 10 pedidos contra a API. Este comando lê o dataset fixo e faz um `POST` por pedido, usando a variável `$API` capturada no passo 3:
 
 ```bash
 cd /workspaces/fiap-cloud-engineering/03-Compute/03-Lambda
-API="<cole-sua-api_url-aqui>"
 for p in $(seq 0 9); do
   pedido=$(python3 -c "import json;print(json.dumps(json.load(open('dados/pedidos.json'))[$p]))")
   curl -s -X POST "$API/pedidos" -H "Content-Type: application/json" -d "$pedido"
@@ -188,11 +193,18 @@ done
 
 Saída esperada: 10 linhas como `{"status": "gravado", "s3_key": "pedidos/dt=2026-03-15/PED-0001.json"}`.
 
+<details>
+<summary><b>⚠ Se der erro: <code>curl</code> reclama de URL vazia ou <code>$API</code> não definida</b></summary>
+<blockquote>
+Você provavelmente abriu um terminal novo (as variáveis se perdem). Volte à pasta `fase-1-ingestao` e rode de novo o passo 3 (`export API=...` / `export BUCKET=...`).
+</blockquote>
+</details>
+
 <a id="passo-5"></a>
-**5.** Confirme que os 10 pedidos chegaram ao data lake — este é o **go/no-go** da fase. Se não der 10, pare e revise antes de seguir:
+**5.** Confirme que os 10 pedidos chegaram ao data lake — este é o **go/no-go** da fase. Usa a variável `$BUCKET` do passo 3. Se não der 10, pare e revise antes de seguir:
 
 ```bash
-aws s3 ls s3://pedeja-datalake-$(aws sts get-caller-identity --query Account --output text)/pedidos/dt=2026-03-15/ | wc -l
+aws s3 ls s3://$BUCKET/pedidos/dt=2026-03-15/ | wc -l
 ```
 
 Saída esperada: `10`.
@@ -202,7 +214,13 @@ Saída esperada: `10`.
 ![](img/f1-s3.png)
 
 <a id="passo-6"></a>
-**6.** Abra o **dashboard de observabilidade** no console AWS (use a `dashboard_url` do passo 3, ou navegue em CloudWatch → Dashboards → `PedeJa-Fase1-Ingestao`). Observe os **4 golden signals** da Lambda e o **faturamento por cidade**.
+**6.** Pegue o link do **dashboard de observabilidade** (rode na pasta `fase-1-ingestao`) e abra no navegador:
+
+```bash
+terraform -chdir=/workspaces/fiap-cloud-engineering/03-Compute/03-Lambda/fase-1-ingestao output -raw dashboard_url
+```
+
+Abra a URL impressa (ou navegue em CloudWatch → Dashboards → `PedeJa-Fase1-Ingestao`). Observe os **4 golden signals** da Lambda e o **faturamento por cidade**.
 
 <!-- PRINT SUGERIDO: img/f1-dashboard.png
      Dashboard PedeJa-Fase1-Ingestao mostrando Invocacoes, Duration, Errors, ConcurrentExecutions e o grafico de faturamento por cidade. Capturar a tela inteira. -->
@@ -292,11 +310,18 @@ terraform init \
 terraform apply -auto-approve
 ```
 
-Guarde a `api_url` da saída.
-
 <!-- PRINT SUGERIDO: img/f2-apply.png
      Saida do terraform apply da Fase 2 com "Apply complete! Resources: 12 added" e os outputs api_url, queue_url, dashboard_url. -->
 ![](img/f2-apply.png)
+
+Capture os valores em variáveis (rode na pasta `fase-2-fila`):
+
+```bash
+export API=$(terraform output -raw api_url)
+export BUCKET=$(terraform output -raw bucket_datalake)
+echo "API....: $API"
+echo "BUCKET.: $BUCKET"
+```
 
 <details>
 <summary><b>💡 Clique para entender — produtor, consumidor e por que a fila salva a Black Friday</b></summary>
@@ -312,11 +337,10 @@ A fila é um **buffer**: se chegam 10.000 pedidos num segundo, eles esperam na f
 </details>
 
 <a id="passo-10"></a>
-**10.** Dispare os mesmos 10 pedidos (troque a URL pela sua `api_url`):
+**10.** Dispare os mesmos 10 pedidos, usando a variável `$API` capturada no passo 9:
 
 ```bash
 cd /workspaces/fiap-cloud-engineering/03-Compute/03-Lambda
-API="<cole-sua-api_url-aqui>"
 for p in $(seq 0 9); do
   pedido=$(python3 -c "import json;print(json.dumps(json.load(open('dados/pedidos.json'))[$p]))")
   curl -s -X POST "$API/pedidos" -H "Content-Type: application/json" -d "$pedido"
@@ -327,11 +351,11 @@ done
 Saída esperada: 10 linhas como `{"status": "enfileirado", "pedido_id": "PED-0001"}`. Note: **`enfileirado`**, não `gravado` — o produtor respondeu antes de o S3 ser tocado. É o desacoplamento em ação.
 
 <a id="passo-11"></a>
-**11.** Aguarde alguns segundos e confirme que a consumidora processou a fila e gravou no S3 (**go/no-go**):
+**11.** Aguarde alguns segundos e confirme que a consumidora processou a fila e gravou no S3 (**go/no-go**). Usa a variável `$BUCKET` do passo 9:
 
 ```bash
 sleep 10
-aws s3 ls s3://pedeja-datalake-$(aws sts get-caller-identity --query Account --output text)/pedidos/dt=2026-03-15/ | wc -l
+aws s3 ls s3://$BUCKET/pedidos/dt=2026-03-15/ | wc -l
 ```
 
 Saída esperada: `10`. A fila esvaziou e os 10 pedidos chegaram ao data lake — agora de forma assíncrona.
@@ -341,7 +365,13 @@ Saída esperada: `10`. A fila esvaziou e os 10 pedidos chegaram ao data lake —
 ![](img/f2-s3.png)
 
 <a id="passo-12"></a>
-**12.** Abra o dashboard `PedeJa-Fase2-Fila` no console (CloudWatch → Dashboards). Compare com o da Fase 1: agora você vê a **profundidade da fila** subir e zerar, a **latência do produtor vs consumidor** (o produtor é muito mais rápido) e a **DLQ** (vazia, porque nada falhou).
+**12.** Pegue o link do dashboard `PedeJa-Fase2-Fila` e abra no navegador:
+
+```bash
+terraform -chdir=/workspaces/fiap-cloud-engineering/03-Compute/03-Lambda/fase-2-fila output -raw dashboard_url
+```
+
+Compare com o da Fase 1: agora você vê a **profundidade da fila** subir e zerar, a **latência do produtor vs consumidor** (o produtor é muito mais rápido) e a **DLQ** (vazia, porque nada falhou).
 
 <!-- PRINT SUGERIDO: img/f2-dashboard.png
      Dashboard PedeJa-Fase2-Fila: backlog da fila, latencia produtor vs consumidor, DLQ zerada, enfileirados vs processados. -->
@@ -404,6 +434,15 @@ terraform init \
 terraform apply -auto-approve
 ```
 
+Capture os valores em variáveis (rode na pasta `fase-3-streaming`):
+
+```bash
+export API=$(terraform output -raw api_url)
+export BUCKET=$(terraform output -raw bucket_datalake)
+echo "API....: $API"
+echo "BUCKET.: $BUCKET"
+```
+
 > [!NOTE]
 > Os consumidores do Kinesis usam `starting_position = TRIM_HORIZON` (leem desde o início do stream). Após o apply, eles levam **~30-60 segundos** para "armar" antes de começar a processar. Por isso o passo 15 publica e o passo 16 espera.
 
@@ -427,11 +466,10 @@ Cada consumidor tem seu **próprio ponteiro de leitura** (iterator) no stream. O
 </details>
 
 <a id="passo-15"></a>
-**15.** Publique os mesmos 10 pedidos no stream (troque a URL):
+**15.** Publique os mesmos 10 pedidos no stream, usando a variável `$API` do passo 14:
 
 ```bash
 cd /workspaces/fiap-cloud-engineering/03-Compute/03-Lambda
-API="<cole-sua-api_url-aqui>"
 for p in $(seq 0 9); do
   pedido=$(python3 -c "import json;print(json.dumps(json.load(open('dados/pedidos.json'))[$p]))")
   curl -s -X POST "$API/pedidos" -H "Content-Type: application/json" -d "$pedido"
@@ -442,12 +480,12 @@ done
 Saída esperada: 10 linhas como `{"status": "publicado", "pedido_id": "PED-0001"}`.
 
 <a id="passo-16"></a>
-**16.** Aguarde o polling dos consumidores e valide os **dois** caminhos a partir do **mesmo** stream:
+**16.** Aguarde o polling dos consumidores e valide os **dois** caminhos a partir do **mesmo** stream (usa `$BUCKET` do passo 14):
 
 ```bash
 sleep 45
 echo "Consumidor 1 (data lake) - objetos no S3:"
-aws s3 ls s3://pedeja-datalake-$(aws sts get-caller-identity --query Account --output text)/pedidos/dt=2026-03-15/ | wc -l
+aws s3 ls s3://$BUCKET/pedidos/dt=2026-03-15/ | wc -l
 echo "Consumidor 2 (faturamento) - cidades agregadas:"
 aws logs filter-log-events --log-group-name "/aws/lambda/pedeja-faturamento" \
   --start-time $(python3 -c "import time;print(int((time.time()-120)*1000))") \
@@ -462,7 +500,13 @@ Saída esperada: `10` objetos no S3 **e** as 4 cidades (Belo Horizonte, Curitiba
 ![](img/f3-dois-consumidores.png)
 
 <a id="passo-17"></a>
-**17.** Abra o dashboard `PedeJa-Fase3-Streaming`. O gráfico **publicados vs data lake vs faturamento** mostra os três números iguais (10): um produtor, dois consumidores, todos vendo o mesmo stream. O faturamento por cidade bate com a tabela da Parte 1.
+**17.** Pegue o link do dashboard `PedeJa-Fase3-Streaming` e abra no navegador:
+
+```bash
+terraform -chdir=/workspaces/fiap-cloud-engineering/03-Compute/03-Lambda/fase-3-streaming output -raw dashboard_url
+```
+
+O gráfico **publicados vs data lake vs faturamento** mostra os três números iguais (10): um produtor, dois consumidores, todos vendo o mesmo stream. O faturamento por cidade bate com a tabela da Parte 1.
 
 <!-- PRINT SUGERIDO: img/f3-dashboard.png
      Dashboard PedeJa-Fase3-Streaming: trafego publicados vs 2 consumidores, e faturamento em tempo real por cidade. -->
